@@ -1,0 +1,23 @@
+{
+  "name": "entrance-counter",
+  "version": "1.0.0",
+  "description": "Counts the amount of people that have entered the room (written using NodeJS, Express.js and Socket.IO)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MitkoZ/Entrance-Counter.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MitkoZ/Entrance-Counter/issues"
+  },
+  "homepage": "https://github.com/MitkoZ/Entrance-Counter#readme",
+  "dependencies": {
+    "express": "^4.16.3",
+    "socket.io": "^2.1.0"
+  }
+}
