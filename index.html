@@ -2,93 +2,89 @@
 <html>
 
 <head>
+  <meta charset="utf-8">
   <title>Entrance Counter</title>
   <script src="/socket.io/socket.io.js"></script>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script> 
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-  <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+  <!-- <script type="text/javascript" src="https://www.google.com/jsapi"></script> -->
 </head>
 
 <body>
 
   <script>
-  
-   var onlineUsersCounter = 0;
-   var peoplePassing = 0;
-   var studentsPassing = 0;
+    var chartData = null;
+    var chart = null;
+    google.charts.load('current', { 'packages': ['gauge'] });
+    google.charts.setOnLoadCallback(function () {
+      $(function () {
+        chart = new google.visualization.Gauge(document.getElementById("chart_div"));
+        var onlineUsersCounter = 0;
+        var peoplePassing = 0;
+        var studentsPassing = 0;
 
-   var chartData = [
+        chartData = [
           ['Label', 'Value'],
           ['Users', 0],
           ['People', 0],
-          ['Students skipping lectures', 0]
+          ['Students', 0]
         ];
 
-    $(function () {
-      
-      var socket = io();
-      var chart = null;
-      
-      socket.on('online', function (msg) {
-        onlineUsersCounter = msg;
-        $('#onlineCounter').html(onlineUsersCounter);
-         chartData[1] = ['Users',onlineUsersCounter];
-         drawChart();
-      });
+        var socket = io();
 
-       socket.on('door', function (msg) {
-         peoplePassing = msg;
-        $('#doorOne').html(peoplePassing);
-        chartData[2] = ['People',peoplePassing];
-        drawChart();
-      });
+        socket.on('onlineUserCount', function (msg) {
+          onlineUsersCounter = msg;
+          $('#onlineCounter').html(onlineUsersCounter);
+          chartData[1] = ['Users', onlineUsersCounter];
+          drawChart();
+        });
 
-       socket.on('doorTwo', function (msg) {
-        studentsPassing = msg;
-        $('#doorTwo').html(studentsPassing);
-         chartData[3] = ['Students',studentsPassing];
-         drawChart();
-      });
+        socket.on('doorOne', function (msg) {
+          peoplePassing = msg;
+          $('#doorOne').html(peoplePassing);
+          chartData[2] = ['People', peoplePassing];
+          drawChart();
+        });
 
+        socket.on('doorTwo', function (msg) {
+          studentsPassing = msg;
+          $('#doorTwo').html(studentsPassing);
+          chartData[3] = ['Students', studentsPassing];
+          drawChart();
+        });
+      });
     });
 
+    function drawChart() {
 
-    google.charts.load('current', {'packages':['gauge']});
-    google.charts.setOnLoadCallback(charLibLoaded);
+      var data = google.visualization.arrayToDataTable(chartData);
 
-      function charLibLoaded()
-      {
-        chart = new google.visualization.Gauge(document.getElementById('chart_div'));
-        drawChart();
-      }
-      
+      var options = {
+        width: 1000, height: 400,
+        redFrom: 8, redTo: 10,
+        yellowFrom: 6, yellowTo: 8,
+        greenFrom: 1, greenTo: 3,
+        minorTicks: 5,
+        max: 10,
+      };
 
-      function drawChart() {
+      chart.draw(data, options);
 
-        var data = google.visualization.arrayToDataTable(chartData);
-
-         var options = {
-          width: 800, height: 400,
-          redFrom: 1700, redTo: 2000,
-          yellowFrom:1500, yellowTo: 1700,
-          greenFrom:500, greenTo:1500,
-          minorTicks: 5,
-          max: 2000,
-        };
-
-        chart.draw(data, options);
-
-         //data.setValue(0, 1, onlineUsersCounter);
-         //data[1] = ['Users',onlineUsersCounter];
-          //chart.draw(data, options);
+      //data.setValue(0, 1, onlineUsersCounter);
+      //data[1] = ['Users',onlineUsersCounter];
+      //chart.draw(data, options);
 
 
-      }
+    }
   </script>
 
-<h1>Online Users</h1></hq><h1 id="onlineCounter">0</h1>
-<h1>Door One</h1></hq><h1 id="doorOne">0</h1>
-<h1>Door Two</h1></hq><h1 id="doorTwo">0</h1>
-<div id="chart_div" style="width: 900px; height: 500px;"></div>
+  <h1>Online Users</h1>
+  <h1 id="onlineCounter">0</h1>
+  <h1>Door One</h1>
+  <h1 id="doorOne">0</h1>
+  <h1>Door Two</h1>
+  <h1 id="doorTwo">0</h1>
+  <div id="chart_div" style="width: 900px; height: 500px;"></div>
 </body>
+
 </html>
