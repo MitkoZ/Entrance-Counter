@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html>
 
 <head>
@@ -15,6 +15,7 @@
   <script>
     var chartData = null;
     var chart = null;
+    var socket = io();
     google.charts.load('current', { 'packages': ['gauge'] });
     google.charts.setOnLoadCallback(function () {
       $(function () {
@@ -27,7 +28,6 @@
           ['Door two', 0]
         ];
 
-        var socket = io();
 
         socket.on('onlineUserCount', function (msg) {
           $('#onlineCounter').html(msg);
@@ -63,9 +63,52 @@
       };
 
       chart.draw(data, options);
+
     }
+      //todo - use post
+    google.charts.load('current', { 'packages': ['corechart'] });
+    google.charts.setOnLoadCallback(function () {
+      $(function () {
+        var dustChart = new google.visualization.LineChart(document.getElementById('dustinessOfTheAirChart'));
+        var dustData = new google.visualization.DataTable();
+
+        var options = {
+          width: 900,
+          height: 500,
+          animation: {
+            startup: true,
+            duration: 1000,
+            easing: 'in'
+          }
+        };
+
+        dustData.addColumn("timeofday", "Hour");
+        dustData.addColumn("number", "Dust Particles");
+
+        $.get("/getAllDustParticles")
+          .fail(() => alert("Could not load data from the server"))
+          .always((d) => {
+            dustData.addRows(d);
+            dustChart.draw(dustData, options);
+          });
+
+        socket.on("onDustParticlesSensor", function (airDustinessAndtimeData) {
+          dustData.addRow(airDustinessAndtimeData);
+          dustChart.draw(dustData, options);
+        });
+
+        socket.on("onDataUpdated", function (airDustinessAndtimeData) {
+          dustData.removeRows(0, dustData.getNumberOfRows());
+          dustData.addRows(airDustinessAndtimeData);
+          dustChart.draw(dustData, options);
+        });
+
+
+      })
+    })
   </script>
 
+  <div id="dustinessOfTheAirChart"></div>
   <h1>Online Users</h1>
   <h1 id="onlineCounter">0</h1>
   <h1>Door One</h1>
