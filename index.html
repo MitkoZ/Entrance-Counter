@@ -19,37 +19,31 @@
     google.charts.setOnLoadCallback(function () {
       $(function () {
         chart = new google.visualization.Gauge(document.getElementById("chart_div"));
-        var onlineUsersCounter = 0;
-        var peoplePassing = 0;
-        var studentsPassing = 0;
 
         chartData = [
           ['Label', 'Value'],
-          ['Users', 0],
-          ['People', 0],
-          ['Students', 0]
+          ['Users online', 0],
+          ['Door one', 0],
+          ['Door two', 0]
         ];
 
         var socket = io();
 
         socket.on('onlineUserCount', function (msg) {
-          onlineUsersCounter = msg;
-          $('#onlineCounter').html(onlineUsersCounter);
-          chartData[1] = ['Users', onlineUsersCounter];
+          $('#onlineCounter').html(msg);
+          chartData[1] = ['Users online', msg];
           drawChart();
         });
 
         socket.on('doorOne', function (msg) {
-          peoplePassing = msg;
-          $('#doorOne').html(peoplePassing);
-          chartData[2] = ['People', peoplePassing];
+          $('#doorOne').html(msg);
+          chartData[2] = ['Door one', msg];
           drawChart();
         });
 
         socket.on('doorTwo', function (msg) {
-          studentsPassing = msg;
-          $('#doorTwo').html(studentsPassing);
-          chartData[3] = ['Students', studentsPassing];
+          $('#doorTwo').html(msg);
+          chartData[3] = ['Door two', msg];
           drawChart();
         });
       });
@@ -69,12 +63,6 @@
       };
 
       chart.draw(data, options);
-
-      //data.setValue(0, 1, onlineUsersCounter);
-      //data[1] = ['Users',onlineUsersCounter];
-      //chart.draw(data, options);
-
-
     }
   </script>
 
