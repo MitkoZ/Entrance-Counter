@@ -76,12 +76,12 @@ function incrementAverageDoorSteps(door, receivedValue, timeInMinutesToCalculate
   function decrementAverageDoorSteps(door, valueToDecrementWith, timeInMinutesToCalculateFor) {
     switch (door) {
       case "doorOne":
-        doorOneCounter -= receivedValue;
+        doorOneCounter -= valueToDecrementWith;
         doorOneAverage = doorOneCounter / timeInMinutesToCalculateFor;
         emitAverageDoorSteps("doorOne");
         break;
       case "doorTwo":
-        doorTwoCounter -= receivedValue;
+        doorTwoCounter -= valueToDecrementWith;
         doorTwoAverage = doorTwoCounter / timeInMinutesToCalculateFor;
         emitAverageDoorSteps("doorTwo");
         break;
