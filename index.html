@@ -11,7 +11,6 @@
 </head>
 
 <body>
-
   <script>
     google.charts.load('current', { 'packages': ['gauge'] });
     let chartData = null;
@@ -31,6 +30,9 @@
             greenFrom: 1, greenTo: 3,
             minorTicks: 5,
             max: 10,
+            animation: {
+              easing: "out"
+            }
           };
 
           chart.draw(data, options);
@@ -97,7 +99,7 @@
           dustChart.draw(dustData, options);
         });
 
-        socket.on("onDataUpdated", function (airDustinessAndtimeData) {
+        socket.on("onDustParticlesDataUpdated", function (airDustinessAndtimeData) {
           dustData.removeRows(0, dustData.getNumberOfRows());
           dustData.addRows(airDustinessAndtimeData);
           dustChart.draw(dustData, options);
