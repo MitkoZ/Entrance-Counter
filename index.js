@@ -120,12 +120,12 @@ function emitAverageDoorSteps(door) {
 function decrementAverageDoorSteps(door, valueToDecrementWith, timeInMinutesToCalculateFor) {
     switch (door) {
         case "doorOne":
-            doorOneCounter -= receivedValue;
+            doorOneCounter -= valueToDecrementWith;
             doorOneAverage = doorOneCounter / timeInMinutesToCalculateFor;
             emitAverageDoorSteps("doorOne");
             break;
         case "doorTwo":
-            doorTwoCounter -= receivedValue;
+            doorTwoCounter -= valueToDecrementWith;
             doorTwoAverage = doorTwoCounter / timeInMinutesToCalculateFor;
             emitAverageDoorSteps("doorTwo");
             break;
@@ -142,7 +142,7 @@ function removeData(date) {
     };
     var index = airDustinessData.findIndex(x => x[0][0] === date.hours && x[0][1] === date.minutes && x[0][2] === date.seconds);
     airDustinessData.splice(index, 1);
-    io.emit("onDataUpdated", airDustinessData);
+    io.emit("onDustParticlesDataUpdated", airDustinessData);
 };
 
 http.listen(3000, function () {
