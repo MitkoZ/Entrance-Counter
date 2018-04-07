@@ -13,12 +13,29 @@
 <body>
 
   <script>
-    var chartData = null;
-    var chart = null;
-    var socket = io();
     google.charts.load('current', { 'packages': ['gauge'] });
+    let chartData = null;
+    let chart = null;
+    var socket = null;
+
     google.charts.setOnLoadCallback(function () {
       $(function () {
+        socket = io();
+        function drawChart() {
+          var data = google.visualization.arrayToDataTable(chartData);
+
+          var options = {
+            width: 1000, height: 400,
+            redFrom: 8, redTo: 10,
+            yellowFrom: 6, yellowTo: 8,
+            greenFrom: 1, greenTo: 3,
+            minorTicks: 5,
+            max: 10,
+          };
+
+          chart.draw(data, options);
+        }
+
         chart = new google.visualization.Gauge(document.getElementById("chart_div"));
 
         chartData = [
@@ -49,23 +66,6 @@
       });
     });
 
-    function drawChart() {
-
-      var data = google.visualization.arrayToDataTable(chartData);
-
-      var options = {
-        width: 1000, height: 400,
-        redFrom: 8, redTo: 10,
-        yellowFrom: 6, yellowTo: 8,
-        greenFrom: 1, greenTo: 3,
-        minorTicks: 5,
-        max: 10,
-      };
-
-      chart.draw(data, options);
-
-    }
-      //todo - use post
     google.charts.load('current', { 'packages': ['corechart'] });
     google.charts.setOnLoadCallback(function () {
       $(function () {

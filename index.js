@@ -39,6 +39,10 @@ app.get('/', function (req, res) {
     res.sendFile(__dirname + '/index.html');
 });
 
+app.get("/getAllDustParticles", function (req, res) {
+    res.status(200).json(airDustinessData);
+});
+
 app.post('/submitData', function (req, res) {
     var requestBody = req.body;
     var device = requestBody.dev_id;
@@ -66,6 +70,7 @@ app.post('/submitData', function (req, res) {
             airDustinessData.push(dustParticleAndHour);
             setTimeout(removeData, 43200000, dateNow); // after 12 hours
             io.emit("onDustParticlesSensor", dustParticleAndHour);
+            res.end();            
             break;
         default:
             throw new Error("Device not handled");
@@ -73,16 +78,12 @@ app.post('/submitData', function (req, res) {
     }
 });
 
-http.listen(3000, function () {
-    console.log('listening on *:3000');
-});
-
-
 io.on('connection', function (socket) {
     currentOnlineUsers++;
     io.emit('onlineUserCount', currentOnlineUsers);
     io.emit("doorOne", doorOneAverage);
     io.emit("doorTwo", doorTwoAverage);
+    
     socket.on('disconnect', function () {
         if (currentOnlineUsers > 0)
             currentOnlineUsers--;
@@ -131,8 +132,7 @@ function decrementAverageDoorSteps(door, valueToDecrementWith, timeInMinutesToCa
         default:
             throw new Error(`${door} is not handled in the switch`);
     }
-}
-});
+};
 
 function removeData(date) {
     var date = {
@@ -143,8 +143,8 @@ function removeData(date) {
     var index = airDustinessData.findIndex(x => x[0][0] === date.hours && x[0][1] === date.minutes && x[0][2] === date.seconds);
     airDustinessData.splice(index, 1);
     io.emit("onDataUpdated", airDustinessData);
-}
+};
 
-app.get("/getAllDustParticles", function (req, res) {
-    res.status(200).json(airDustinessData);
+http.listen(3000, function () {
+    console.log('listening on *:3000');
 });
