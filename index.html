@@ -7,63 +7,46 @@
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-  <!-- <script type="text/javascript" src="https://www.google.com/jsapi"></script> -->
+  <style>
+    .gauge-chart {
+      display: inline-block;
+      width: 400px;
+    }
+  </style>
 </head>
 
 <body>
   <script>
-    google.charts.load('current', { 'packages': ['gauge'] });
-    let chartData = null;
-    let chart = null;
     var socket = null;
+    google.charts.load('current', { 'packages': ['gauge'] });
+    let usersOnlineChart = null;
+    let doorOneChart = null;
+    let doorTwoChart = null;
+
 
     google.charts.setOnLoadCallback(function () {
       $(function () {
         socket = io();
-        function drawChart() {
-          var data = google.visualization.arrayToDataTable(chartData);
-
-          var options = {
-            width: 1000, height: 400,
-            redFrom: 8, redTo: 10,
-            yellowFrom: 6, yellowTo: 8,
-            greenFrom: 1, greenTo: 3,
-            minorTicks: 5,
-            max: 10,
-            animation: {
-              easing: "out"
-            }
-          };
-
-          chart.draw(data, options);
-        }
-
-        chart = new google.visualization.Gauge(document.getElementById("chart_div"));
-
-        chartData = [
-          ['Label', 'Value'],
-          ['Users online', 0],
-          ['Door one', 0],
-          ['Door two', 0]
-        ];
-
+        usersOnlineChart = new google.visualization.Gauge(document.getElementById("usersOnlineChart"));
+        doorOneChart = new google.visualization.Gauge(document.getElementById("doorOneChart"));
+        doorTwoChart = new google.visualization.Gauge(document.getElementById("doorTwoChart"));
 
         socket.on('onlineUserCount', function (msg) {
           $('#onlineCounter').html(msg);
-          chartData[1] = ['Users online', msg];
-          drawChart();
+          let chartData = [["Label", "Value"], ["Users Online", msg]];
+          drawGaugeChart("usersOnline", chartData);
         });
 
         socket.on('doorOne', function (msg) {
           $('#doorOne').html(msg);
-          chartData[2] = ['Door one', msg];
-          drawChart();
+          let chartData = [["Label", "Value"], ["Door one", msg]];
+          drawGaugeChart("doorOne", chartData);
         });
 
         socket.on('doorTwo', function (msg) {
           $('#doorTwo').html(msg);
-          chartData[3] = ['Door two', msg];
-          drawChart();
+          let chartData = [["Label", "Value"], ["Door two", msg]];
+          drawGaugeChart("doorTwo", chartData);
         });
       });
     });
@@ -108,6 +91,44 @@
 
       })
     })
+
+    function drawGaugeChart(chartName, chartData) {
+      var value = chartData[1][1];
+      var min = Math.floor(value / 10) * 10;
+      var max = min + 10;
+      var greenFrom = min;
+      var greenTo = greenFrom + 3;
+      var yellowFrom = max - 4;
+      var yellowTo = yellowFrom + 2;
+      var redFrom = max - 2;
+      var redTo = max;
+      var data = google.visualization.arrayToDataTable(chartData);
+
+      var options = {
+        width: 1000, height: 400,
+        redFrom: redFrom, redTo: redTo,
+        yellowFrom: yellowFrom, yellowTo: yellowTo,
+        greenFrom: greenFrom, greenTo: greenTo,
+        minorTicks: 5,
+        min: min,
+        max: max,
+        animation: {
+          easing: "out"
+        }
+      };
+
+      switch (chartName) {
+        case "usersOnline":
+          usersOnlineChart.draw(data, options);
+          break;
+        case "doorOne":
+          doorOneChart.draw(data, options);
+          break;
+        case "doorTwo":
+          doorTwoChart.draw(data, options);
+          break;
+      }
+    }
   </script>
 
   <div id="dustinessOfTheAirChart"></div>
@@ -117,7 +138,9 @@
   <h1 id="doorOne">0</h1>
   <h1>Door Two</h1>
   <h1 id="doorTwo">0</h1>
-  <div id="chart_div" style="width: 900px; height: 500px;"></div>
+  <div id="usersOnlineChart" class="gauge-chart"></div>
+  <div id="doorOneChart" class="gauge-chart"></div>
+  <div id="doorTwoChart" class="gauge-chart"></div>
 </body>
 
 </html>

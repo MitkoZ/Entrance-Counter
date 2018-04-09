@@ -1,8 +1,8 @@
-var app = require('express')();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
-var bodyParser = require('body-parser');
-var Base64 = require('js-base64').Base64;
+const app = require('express')();
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
+const bodyParser = require('body-parser');
+const Base64 = require('js-base64').Base64;
 
 app.use(bodyParser.json());
 
@@ -47,34 +47,34 @@ app.post('/submitData', function (req, res) {
     var requestBody = req.body;
     var device = requestBody.dev_id;
     var receivedValue = Number(requestBody.payload_raw);
-
+    
     switch (device) {
         case 'doorOne':
         case 'doorTwo':
-            if (receivedValue < 0) {
-                res.status(400).send("Negative new count of steps is not accepted");
-                return;
-            }
-            incrementAverageDoorSteps(device, receivedValue, timeToCalculateAverageFor);
-            emitAverageDoorSteps(device);
-            res.end();
-            break;
+        if (receivedValue < 0) {
+            res.status(400).send("Negative new count of steps is not accepted");
+            return;
+        }
+        incrementAverageDoorSteps(device, receivedValue, timeToCalculateAverageFor);
+        emitAverageDoorSteps(device);
+        res.end();
+        break;
         case "airDustinessSensor":
-            if (receivedValue < 0) {
-                res.status(400).send("Negative air dust particles data is not allowed");
-                return;
-            }
-            var dustParticle = Number(receivedValue);
-            var dateNow = new Date();
-            var dustParticleAndHour = [[dateNow.getHours(), dateNow.getMinutes(), dateNow.getSeconds()], dustParticle];
-            airDustinessData.push(dustParticleAndHour);
-            setTimeout(removeData, 43200000, dateNow); // after 12 hours
-            io.emit("onDustParticlesSensor", dustParticleAndHour);
-            res.end();            
-            break;
+        if (receivedValue < 0) {
+            res.status(400).send("Negative air dust particles data is not allowed");
+            return;
+        }
+        var dustParticle = Number(receivedValue);
+        var dateNow = new Date();
+        var dustParticleAndHour = [[dateNow.getHours(), dateNow.getMinutes(), dateNow.getSeconds()], dustParticle];
+        airDustinessData.push(dustParticleAndHour);
+        setTimeout(removeData, 43200000, dateNow); // after 12 hours
+        io.emit("onDustParticlesSensor", dustParticleAndHour);
+        res.end();            
+        break;
         default:
-            throw new Error("Device not handled");
-
+        throw new Error("Device not handled");
+        
     }
 });
 
