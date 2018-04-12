@@ -1,10 +1,13 @@
-const app = require('express')();
+const express = require('express');
+const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const bodyParser = require('body-parser');
 const Base64 = require('js-base64').Base64;
 
 app.use(bodyParser.json());
+
+app.use(express.static(__dirname + '/public'));
 
 var currentOnlineUsers = 0;
 const timeToCalculateAverageFor = 20;
@@ -51,8 +54,8 @@ app.post('/submitData', function (req, res) {
     var receivedValue = Number(requestBody.payload_raw);
 
     switch (device) {
-        case "doorOne":
-        case "doorTwo":
+        case "doorOneSensor":
+        case "doorTwoSensor":
             if (receivedValue < 0) {
                 res.status(400).send("Negative value for count of steps is not allowed");
                 return;
@@ -105,12 +108,12 @@ io.on('connection', function (socket) {
 
 function incrementAverageDoorSteps(door, receivedValue, timeInMinutesToCalculateFor) {
     switch (door) {
-        case "doorOne":
+        case "doorOneSensor":
             doorOneCounter += receivedValue;
             doorOneAverage = doorOneCounter / timeInMinutesToCalculateFor;
             setTimeout(decrementAverageDoorSteps, timeInMinutesToCalculateFor * 60 * 1000, door, receivedValue, timeInMinutesToCalculateFor);
             break;
-        case "doorTwo":
+        case "doorTwoSensor":
             doorTwoCounter += receivedValue;
             doorTwoAverage = doorTwoCounter / timeInMinutesToCalculateFor;
             setTimeout(decrementAverageDoorSteps, timeInMinutesToCalculateFor * 60 * 1000, door, receivedValue, timeInMinutesToCalculateFor);
@@ -120,10 +123,10 @@ function incrementAverageDoorSteps(door, receivedValue, timeInMinutesToCalculate
 
 function emitAverageDoorSteps(door) {
     switch (door) {
-        case "doorOne":
+        case "doorOneSensor":
             io.emit("doorOne", doorOneAverage);
             break;
-        case "doorTwo":
+        case "doorTwoSensor":
             io.emit("doorTwo", doorTwoAverage);
             break;
     }

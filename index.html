@@ -1,8 +1,12 @@
-﻿<!doctype html>
-<html>
+﻿<!DOCTYPE html>
+<html lang="en">
 
 <head>
-  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="">
+  <meta name="author" content="">
   <title>Entrance Counter</title>
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
@@ -13,145 +17,291 @@
       width: 400px;
     }
   </style>
+  <title>PCVT</title>
+
+  <!-- Bootstrap Core CSS -->
+  <link href="./styles/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <link href="./styles/sb-admin-2.css" rel="stylesheet">
+
+  <script defer src="https://use.fontawesome.com/releases/v5.0.10/js/all.js" integrity="sha384-slN8GvtUJGnv6ca26v8EzVaR9DC58QEwsIk9q1QXdCU8Yu8ck/tL/5szYlBbqmS+"
+    crossorigin="anonymous"></script>
+
+    <script>
+        var socket = null;
+        google.charts.load('current', { 'packages': ['gauge'] });
+        let usersOnlineChart = null;
+        let doorOneChart = null;
+        let doorTwoChart = null;
+        google.charts.setOnLoadCallback(function () {
+          $(function () {
+            socket = io();
+            usersOnlineChart = new google.visualization.Gauge(document.getElementById("usersOnlineChart"));
+            doorOneChart = new google.visualization.Gauge(document.getElementById("doorOneChart"));
+            doorTwoChart = new google.visualization.Gauge(document.getElementById("doorTwoChart"));
+            noiseChart = new google.visualization.Gauge(document.getElementById("noiseChart"));
+            socket.on('onlineUserCount', function (msg) {
+              $('#onlineCounter').html(msg);
+              let chartData = [["Label", "Value"], ["Users Online", msg]];
+              drawGaugeChart("usersOnlineChart", chartData);
+            });
+            socket.on('doorOne', function (msg) {
+              $('#doorOne').html(msg);
+              let chartData = [["Label", "Value"], ["Door one", msg]];
+              drawGaugeChart("doorOneChart", chartData);
+            });
+            socket.on('doorTwo', function (msg) {
+              $('#doorTwo').html(msg);
+              let chartData = [["Label", "Value"], ["Door two", msg]];
+              drawGaugeChart("doorTwoChart", chartData);
+            });
+            socket.on("noiseData", function (msg) {
+              let chartData = [["Label", "Value"], ["Noise in dB", msg]];
+              drawGaugeChart("noiseChart", chartData);
+            })
+          });
+        });
+        google.charts.load('current', { 'packages': ['corechart'] });
+        google.charts.setOnLoadCallback(function () {
+          $(function () {
+            var dustChart = new google.visualization.LineChart(document.getElementById('dustinessOfTheAirChart'));
+            var dustData = new google.visualization.DataTable();
+            var options = {
+              width: 900,
+              height: 500,
+              pointSize: 7,
+              animation: {
+                startup: true,
+                duration: 1000,
+                easing: 'in'
+              }
+            };
+            dustData.addColumn("timeofday", "Hour");
+            dustData.addColumn("number", "Dust Particles");
+            $.get("/getAllDustParticles")
+              .fail(() => alert("Could not load data from the server"))
+              .always((d) => {
+                dustData.addRows(d);
+                dustChart.draw(dustData, options);
+              });
+            socket.on("onDustParticlesSensor", function (airDustinessAndtimeData) {
+              dustData.addRow(airDustinessAndtimeData);
+              dustChart.draw(dustData, options);
+            });
+            socket.on("onDustParticlesDataUpdated", function (airDustinessAndtimeData) {
+              dustData.removeRows(0, dustData.getNumberOfRows());
+              dustData.addRows(airDustinessAndtimeData);
+              dustChart.draw(dustData, options);
+            });
+          })
+        })
+        function drawGaugeChart(chartName, chartData) {
+          var value = chartData[1][1];
+          var min = Math.floor(value / 10) * 10;
+          var max = min + 10;
+          var greenFrom = min;
+          var greenTo = greenFrom + 3;
+          var yellowFrom = max - 4;
+          var yellowTo = yellowFrom + 2;
+          var redFrom = max - 2;
+          var redTo = max;
+          var data = google.visualization.arrayToDataTable(chartData);
+          var options = {
+            width: 1000, height: 400,
+            redFrom: redFrom, redTo: redTo,
+            yellowFrom: yellowFrom, yellowTo: yellowTo,
+            greenFrom: greenFrom, greenTo: greenTo,
+            minorTicks: 5,
+            min: min,
+            max: max,
+            animation: {
+              easing: "out"
+            }
+          };
+          switch (chartName) {
+            case "usersOnlineChart":
+              usersOnlineChart.draw(data, options);
+              break;
+            case "doorOneChart":
+              doorOneChart.draw(data, options);
+              break;
+            case "doorTwoChart":
+              doorTwoChart.draw(data, options);
+              break;
+            case "noiseChart":
+              noiseChart.draw(data, options);
+              break;
+          }
+        }
+      </script>
+
 </head>
 
 <body>
-  <script>
-    var socket = null;
-    google.charts.load('current', { 'packages': ['gauge'] });
-    let usersOnlineChart = null;
-    let doorOneChart = null;
-    let doorTwoChart = null;
+  <div id="wrapper">
+    <!-- Navigation -->
+    <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="http://pcvt.org/">PCVT - Web Summit 2018</a>
+      </div>
+    </nav>
+
+    <div id="page-wrapper" style="min-height: 874px;">
+      <div class="row">
+        <div class="col-lg-12">
+          <h1 class="page-header">Dashboard</h1>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-3 col-md-6">
+          <div class="panel panel-primary">
+            <div class="panel-heading">
+              <div class="row">
+                <div class="col-xs-3">
+                  <i class="fa fa-comments fa-5x"></i>
+                </div>
+                <div class="col-xs-9 text-right">
+                  <div class="huge" id="doorOne">0</div>
+                  <div>Door One Total</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <div class="panel panel-green">
+            <div class="panel-heading">
+              <div class="row">
+                <div class="col-xs-3">
+                  <i class="fa fa-tasks fa-5x"></i>
+                </div>
+                <div class="col-xs-9 text-right">
+                  <div class="huge" id="doorTwo">0</div>
+                  <div>Door Two Total</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <div class="panel panel-yellow">
+            <div class="panel-heading">
+              <div class="row">
+                <div class="col-xs-3">
+                  <i class="fa fa-shopping-cart fa-5x"></i>
+                </div>
+                <div class="col-xs-9 text-right">
+                  <div class="huge" id="onlineCounter">0</div>
+                  <div>Online Counter</div>
+                </div>
+              </div>
+            </div>
+            <a href="https://blackrockdigital.github.io/startbootstrap-sb-admin-2/pages/index.html#">
+            </a>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <div class="panel panel-red">
+            <div class="panel-heading">
+              <div class="row">
+                <div class="col-xs-3">
+                  <i class="fa fa-support fa-5x"></i>
+                </div>
+                <div class="col-xs-9 text-right">
+                  <div class="huge">0</div>
+                  <div>Insert sample here</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /.row -->
+      <div class="row">
+        <div class="col-lg-8">
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <i class="fa fa-bar-chart-o fa-fw"></i>
+              <h4>Air Dustiness Chart</h4>
+              <div class="pull-right" id="dustinessOfTheAirChart" style="padding-top: 3%">
+              </div>
+            </div>
+            <div class="panel-body">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-lg-3 col-md-offset-5">
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <i class="fa fa-bar-chart-o fa-fw"></i>
+            <h4>Users Online</h4>
+            <div class="pull-right" id="usersOnlineChart">
+            </div>
+          </div>
+          <div class="panel-body">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
 
-    google.charts.setOnLoadCallback(function () {
-      $(function () {
-        socket = io();
-        usersOnlineChart = new google.visualization.Gauge(document.getElementById("usersOnlineChart"));
-        doorOneChart = new google.visualization.Gauge(document.getElementById("doorOneChart"));
-        doorTwoChart = new google.visualization.Gauge(document.getElementById("doorTwoChart"));
-        noiseChart = new google.visualization.Gauge(document.getElementById("noiseChart"));
+  <div class="row">
+    <div class="col-lg-3 col-md-offset-5">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <i class="fa fa-bar-chart-o fa-fw"></i>
+          <h4>Door One - Average People Passed in the last 20 minutes</h4>
+          <div class="pull-right" id="doorOneChart">
+          </div>
+        </div>
+        <div class="panel-body">
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
 
-        socket.on('onlineUserCount', function (msg) {
-          $('#onlineCounter').html(msg);
-          let chartData = [["Label", "Value"], ["Users Online", msg]];
-          drawGaugeChart("usersOnlineChart", chartData);
-        });
+  <div class="row">
+    <div class="col-lg-3 col-md-offset-5">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <i class="fa fa-bar-chart-o fa-fw"></i>
+           <h4>Door Two - Average People Passed in the last 20 minutes</h4>
+          <div class="pull-right" id="doorTwoChart">
+          </div>
+        </div>
+        <div class="panel-body">
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+  </div>
 
-        socket.on('doorOne', function (msg) {
-          $('#doorOne').html(msg);
-          let chartData = [["Label", "Value"], ["Door one", msg]];
-          drawGaugeChart("doorOneChart", chartData);
-        });
+  <div class="row">
+    <div class="col-lg-3 col-md-offset-5">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <i class="fa fa-bar-chart-o fa-fw"></i>
+          <h4>Noise Chart</h4>
+          <div class="pull-right" id="noiseChart">
+          </div>
+        </div>
+        <div class="panel-body">
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
 
-        socket.on('doorTwo', function (msg) {
-          $('#doorTwo').html(msg);
-          let chartData = [["Label", "Value"], ["Door two", msg]];
-          drawGaugeChart("doorTwoChart", chartData);
-        });
-
-        socket.on("noiseData", function (msg) {
-          let chartData = [["Label", "Value"], ["Noise in dB", msg]];
-          drawGaugeChart("noiseChart", chartData);
-        })
-      });
-    });
-
-    google.charts.load('current', { 'packages': ['corechart'] });
-    google.charts.setOnLoadCallback(function () {
-      $(function () {
-        var dustChart = new google.visualization.LineChart(document.getElementById('dustinessOfTheAirChart'));
-        var dustData = new google.visualization.DataTable();
-
-        var options = {
-          width: 900,
-          height: 500,
-          pointSize: 7,
-          animation: {
-            startup: true,
-            duration: 1000,
-            easing: 'in'
-          }
-        };
-
-        dustData.addColumn("timeofday", "Hour");
-        dustData.addColumn("number", "Dust Particles");
-
-        $.get("/getAllDustParticles")
-          .fail(() => alert("Could not load data from the server"))
-          .always((d) => {
-            dustData.addRows(d);
-            dustChart.draw(dustData, options);
-          });
-
-        socket.on("onDustParticlesSensor", function (airDustinessAndtimeData) {
-          dustData.addRow(airDustinessAndtimeData);
-          dustChart.draw(dustData, options);
-        });
-
-        socket.on("onDustParticlesDataUpdated", function (airDustinessAndtimeData) {
-          dustData.removeRows(0, dustData.getNumberOfRows());
-          dustData.addRows(airDustinessAndtimeData);
-          dustChart.draw(dustData, options);
-        });
-
-
-      })
-    })
-
-    function drawGaugeChart(chartName, chartData) {
-      var value = chartData[1][1];
-      var min = Math.floor(value / 10) * 10;
-      var max = min + 10;
-      var greenFrom = min;
-      var greenTo = greenFrom + 3;
-      var yellowFrom = max - 4;
-      var yellowTo = yellowFrom + 2;
-      var redFrom = max - 2;
-      var redTo = max;
-      var data = google.visualization.arrayToDataTable(chartData);
-
-      var options = {
-        width: 1000, height: 400,
-        redFrom: redFrom, redTo: redTo,
-        yellowFrom: yellowFrom, yellowTo: yellowTo,
-        greenFrom: greenFrom, greenTo: greenTo,
-        minorTicks: 5,
-        min: min,
-        max: max,
-        animation: {
-          easing: "out"
-        }
-      };
-
-      switch (chartName) {
-        case "usersOnlineChart":
-          usersOnlineChart.draw(data, options);
-          break;
-        case "doorOneChart":
-          doorOneChart.draw(data, options);
-          break;
-        case "doorTwoChart":
-          doorTwoChart.draw(data, options);
-          break;
-        case "noiseChart":
-          noiseChart.draw(data, options);
-          break;
-      }
-    }
-  </script>
-
-  <div id="dustinessOfTheAirChart"></div>
-  <h1>Online Users</h1>
-  <h1 id="onlineCounter">0</h1>
-  <h1>Door One</h1>
-  <h1 id="doorOne">0</h1>
-  <h1>Door Two</h1>
-  <h1 id="doorTwo">0</h1>
-  <div id="usersOnlineChart" class="gauge-chart"></div>
-  <div id="doorOneChart" class="gauge-chart"></div>
-  <div id="doorTwoChart" class="gauge-chart"></div>
-  <div id="noiseChart" class="gauge-chart"></div>
+  <!-- Bootstrap Core JavaScript -->
+  <script src="./styles/bootstrap.min.js.download"></script>
 </body>
 
 </html>
