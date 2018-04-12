@@ -15,6 +15,8 @@ var doorOneAverage = 0;
 var doorTwoCounter = 0;
 var doorTwoAverage = 0;
 
+var currentNoiseValue = 0;
+
 var airDustinessData = [
     //[[{hour}, {minutes}, {seconds}], {particles}] - format
     // mock data
@@ -47,34 +49,43 @@ app.post('/submitData', function (req, res) {
     var requestBody = req.body;
     var device = requestBody.dev_id;
     var receivedValue = Number(requestBody.payload_raw);
-    
+
     switch (device) {
-        case 'doorOne':
-        case 'doorTwo':
-        if (receivedValue < 0) {
-            res.status(400).send("Negative new count of steps is not accepted");
-            return;
-        }
-        incrementAverageDoorSteps(device, receivedValue, timeToCalculateAverageFor);
-        emitAverageDoorSteps(device);
-        res.end();
-        break;
+        case "doorOne":
+        case "doorTwo":
+            if (receivedValue < 0) {
+                res.status(400).send("Negative value for count of steps is not allowed");
+                return;
+            }
+            incrementAverageDoorSteps(device, receivedValue, timeToCalculateAverageFor);
+            emitAverageDoorSteps(device);
+            res.end();
+            break;
+        case "noiseSensor":
+            if (receivedValue < 0) {
+                res.status(400).send("Negative values for noise are not allowed");
+                return;
+            }
+            currentNoiseValue = receivedValue;
+            io.emit("noiseData", currentNoiseValue);
+            res.end();
+            break;
         case "airDustinessSensor":
-        if (receivedValue < 0) {
-            res.status(400).send("Negative air dust particles data is not allowed");
-            return;
-        }
-        var dustParticle = Number(receivedValue);
-        var dateNow = new Date();
-        var dustParticleAndHour = [[dateNow.getHours(), dateNow.getMinutes(), dateNow.getSeconds()], dustParticle];
-        airDustinessData.push(dustParticleAndHour);
-        setTimeout(removeData, 43200000, dateNow); // after 12 hours
-        io.emit("onDustParticlesSensor", dustParticleAndHour);
-        res.end();            
-        break;
+            if (receivedValue < 0) {
+                res.status(400).send("Negative air dust particles data is not allowed");
+                return;
+            }
+            var dustParticle = Number(receivedValue);
+            var dateNow = new Date();
+            var dustParticleAndHour = [[dateNow.getHours(), dateNow.getMinutes(), dateNow.getSeconds()], dustParticle];
+            airDustinessData.push(dustParticleAndHour);
+            setTimeout(removeData, 43200000, dateNow); // after 12 hours
+            io.emit("onDustParticlesSensor", dustParticleAndHour);
+            res.end();
+            break;
         default:
-        throw new Error("Device not handled");
-        
+            throw new Error("Device not handled");
+
     }
 });
 
@@ -83,7 +94,8 @@ io.on('connection', function (socket) {
     io.emit('onlineUserCount', currentOnlineUsers);
     io.emit("doorOne", doorOneAverage);
     io.emit("doorTwo", doorTwoAverage);
-    
+    io.emit("noiseData", currentNoiseValue);
+
     socket.on('disconnect', function () {
         if (currentOnlineUsers > 0)
             currentOnlineUsers--;

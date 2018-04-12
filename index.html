@@ -30,24 +30,30 @@
         usersOnlineChart = new google.visualization.Gauge(document.getElementById("usersOnlineChart"));
         doorOneChart = new google.visualization.Gauge(document.getElementById("doorOneChart"));
         doorTwoChart = new google.visualization.Gauge(document.getElementById("doorTwoChart"));
+        noiseChart = new google.visualization.Gauge(document.getElementById("noiseChart"));
 
         socket.on('onlineUserCount', function (msg) {
           $('#onlineCounter').html(msg);
           let chartData = [["Label", "Value"], ["Users Online", msg]];
-          drawGaugeChart("usersOnline", chartData);
+          drawGaugeChart("usersOnlineChart", chartData);
         });
 
         socket.on('doorOne', function (msg) {
           $('#doorOne').html(msg);
           let chartData = [["Label", "Value"], ["Door one", msg]];
-          drawGaugeChart("doorOne", chartData);
+          drawGaugeChart("doorOneChart", chartData);
         });
 
         socket.on('doorTwo', function (msg) {
           $('#doorTwo').html(msg);
           let chartData = [["Label", "Value"], ["Door two", msg]];
-          drawGaugeChart("doorTwo", chartData);
+          drawGaugeChart("doorTwoChart", chartData);
         });
+
+        socket.on("noiseData", function (msg) {
+          let chartData = [["Label", "Value"], ["Noise in dB", msg]];
+          drawGaugeChart("noiseChart", chartData);
+        })
       });
     });
 
@@ -119,14 +125,17 @@
       };
 
       switch (chartName) {
-        case "usersOnline":
+        case "usersOnlineChart":
           usersOnlineChart.draw(data, options);
           break;
-        case "doorOne":
+        case "doorOneChart":
           doorOneChart.draw(data, options);
           break;
-        case "doorTwo":
+        case "doorTwoChart":
           doorTwoChart.draw(data, options);
+          break;
+        case "noiseChart":
+          noiseChart.draw(data, options);
           break;
       }
     }
@@ -142,6 +151,7 @@
   <div id="usersOnlineChart" class="gauge-chart"></div>
   <div id="doorOneChart" class="gauge-chart"></div>
   <div id="doorTwoChart" class="gauge-chart"></div>
+  <div id="noiseChart" class="gauge-chart"></div>
 </body>
 
 </html>
