@@ -4,6 +4,7 @@ const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const bodyParser = require('body-parser');
 const Base64 = require('js-base64').Base64;
+const schedule = require('node-schedule');
 
 app.use(bodyParser.json());
 
@@ -17,6 +18,9 @@ var doorOneAverage = 0;
 
 var doorTwoCounter = 0;
 var doorTwoAverage = 0;
+
+var doorOnePassedThroughToday = 0;
+var doorTwoPassedThroughToday = 0;
 
 var currentNoiseValue = 0;
 
@@ -95,8 +99,8 @@ app.post('/submitData', function (req, res) {
 io.on('connection', function (socket) {
     currentOnlineUsers++;
     io.emit('onlineUserCount', currentOnlineUsers);
-    io.emit("doorOne", doorOneAverage);
-    io.emit("doorTwo", doorTwoAverage);
+    io.emit("doorOne", doorOneAverage, doorOnePassedThroughToday);
+    io.emit("doorTwo", doorTwoAverage, doorTwoPassedThroughToday);
     io.emit("noiseData", currentNoiseValue);
 
     socket.on('disconnect', function () {
@@ -106,14 +110,23 @@ io.on('connection', function (socket) {
     });
 });
 
+let resetDoorsPassedThroughCron = schedule.scheduleJob("0 0 * * *", function () {
+    doorOnePassedThroughToday = 0;
+    doorTwoPassedThroughToday = 0;
+    io.emit("doorOne", doorOneAverage, doorOnePassedThroughToday);
+    io.emit("doorTwo", doorTwoAverage, doorTwoPassedThroughToday);
+})
+
 function incrementAverageDoorSteps(door, receivedValue, timeInMinutesToCalculateFor) {
     switch (door) {
         case "doorOneSensor":
+            doorOnePassedThroughToday++;
             doorOneCounter += receivedValue;
             doorOneAverage = doorOneCounter / timeInMinutesToCalculateFor;
             setTimeout(decrementAverageDoorSteps, timeInMinutesToCalculateFor * 60 * 1000, door, receivedValue, timeInMinutesToCalculateFor);
             break;
         case "doorTwoSensor":
+            doorTwoPassedThroughToday++;
             doorTwoCounter += receivedValue;
             doorTwoAverage = doorTwoCounter / timeInMinutesToCalculateFor;
             setTimeout(decrementAverageDoorSteps, timeInMinutesToCalculateFor * 60 * 1000, door, receivedValue, timeInMinutesToCalculateFor);
@@ -124,25 +137,25 @@ function incrementAverageDoorSteps(door, receivedValue, timeInMinutesToCalculate
 function emitAverageDoorSteps(door) {
     switch (door) {
         case "doorOneSensor":
-            io.emit("doorOne", doorOneAverage);
+            io.emit("doorOne", doorOneAverage, doorOnePassedThroughToday);
             break;
         case "doorTwoSensor":
-            io.emit("doorTwo", doorTwoAverage);
+            io.emit("doorTwo", doorTwoAverage, doorTwoPassedThroughToday);
             break;
     }
 }
 
 function decrementAverageDoorSteps(door, valueToDecrementWith, timeInMinutesToCalculateFor) {
     switch (door) {
-        case "doorOne":
+        case "doorOneSensor":
             doorOneCounter -= valueToDecrementWith;
             doorOneAverage = doorOneCounter / timeInMinutesToCalculateFor;
-            emitAverageDoorSteps("doorOne");
+            emitAverageDoorSteps("doorOneSensor");
             break;
-        case "doorTwo":
+        case "doorTwoSensor":
             doorTwoCounter -= valueToDecrementWith;
             doorTwoAverage = doorTwoCounter / timeInMinutesToCalculateFor;
-            emitAverageDoorSteps("doorTwo");
+            emitAverageDoorSteps("doorTwoSensor");
             break;
         default:
             throw new Error(`${door} is not handled in the switch`);
