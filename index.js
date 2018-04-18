@@ -44,12 +44,18 @@ var airDustinessData = [
     // [[1, 1, 25], 0]
 ];
 
+let latestAirDustinessParticles = 0;
+
 app.get('/', function (req, res) {
     res.sendFile(__dirname + '/index.html');
 });
 
 app.get("/getAllDustParticles", function (req, res) {
     res.status(200).json(airDustinessData);
+});
+
+app.get("/getLatestDustParticles", function (req, res) {
+    res.status(200).json(latestAirDustinessParticles)
 });
 
 app.post('/submitData', function (req, res) {
@@ -82,12 +88,14 @@ app.post('/submitData', function (req, res) {
                 res.status(400).send("Negative air dust particles data is not allowed");
                 return;
             }
-            var dustParticle = Number(receivedValue);
+            var dustParticle = receivedValue;
+            latestAirDustinessParticles = receivedValue;
             var dateNow = new Date();
             var dustParticleAndHour = [[dateNow.getHours(), dateNow.getMinutes(), dateNow.getSeconds()], dustParticle];
             airDustinessData.push(dustParticleAndHour);
-            setTimeout(removeData, 43200000, dateNow); // after 12 hours
+            setTimeout(removeDustData, 43200000, dateNow); // after 12 hours
             io.emit("onDustParticlesSensor", dustParticleAndHour);
+            io.emit("onLatestDustParticlesDataUpdated", latestAirDustinessParticles);
             res.end();
             break;
         default:
@@ -102,6 +110,7 @@ io.on('connection', function (socket) {
     io.emit("doorOne", doorOneAverage, doorOnePassedThroughToday);
     io.emit("doorTwo", doorTwoAverage, doorTwoPassedThroughToday);
     io.emit("noiseData", currentNoiseValue);
+    io.emit("latestDustParticles", latestAirDustinessParticles);
 
     socket.on('disconnect', function () {
         if (currentOnlineUsers > 0)
@@ -162,7 +171,7 @@ function decrementAverageDoorSteps(door, valueToDecrementWith, timeInMinutesToCa
     }
 };
 
-function removeData(date) {
+function removeDustData(date) {
     var date = {
         "hours": date.getHours(),
         "minutes": date.getMinutes(),
@@ -171,7 +180,15 @@ function removeData(date) {
     var index = airDustinessData.findIndex(x => x[0][0] === date.hours && x[0][1] === date.minutes && x[0][2] === date.seconds);
     airDustinessData.splice(index, 1);
     io.emit("onDustParticlesDataUpdated", airDustinessData);
+    changeLatestDustData();
+    io.emit("onLatestDustParticlesDataUpdated", latestAirDustinessParticles);
 };
+
+function changeLatestDustData() {
+    if (airDustinessData.length == 0) {
+        latestAirDustinessParticles = 0;
+    }
+}
 
 http.listen(3000, function () {
     console.log('listening on *:3000');
