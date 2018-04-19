@@ -120,13 +120,13 @@ let resetDoorsPassedThroughCron = schedule.scheduleJob("0 0 * * *", function () 
 function incrementAverageDoorSteps(door, receivedValue, timeInMinutesToCalculateFor) {
     switch (door) {
         case "doorOneSensor":
-            doorOnePassedThroughToday++;
+            doorOnePassedThroughToday += receivedValue;
             doorOneCounter += receivedValue;
             doorOneAverage = doorOneCounter / timeInMinutesToCalculateFor;
             setTimeout(decrementAverageDoorSteps, timeInMinutesToCalculateFor * 60 * 1000, door, receivedValue, timeInMinutesToCalculateFor);
             break;
         case "doorTwoSensor":
-            doorTwoPassedThroughToday++;
+            doorTwoPassedThroughToday += receivedValue;
             doorTwoCounter += receivedValue;
             doorTwoAverage = doorTwoCounter / timeInMinutesToCalculateFor;
             setTimeout(decrementAverageDoorSteps, timeInMinutesToCalculateFor * 60 * 1000, door, receivedValue, timeInMinutesToCalculateFor);
