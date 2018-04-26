@@ -72,6 +72,10 @@
           let chartData = [["Label", "Value"], ["dB", msg]];
           drawGaugeChart("noiseChart", chartData);
         })
+
+        $.get("/getDoorAverageMinutes")
+          .done((minutes) => $(".door-average-minutes").html(minutes))
+          .fail(() => alert("Couldn't get data from the server"));
       });
     });
 
@@ -295,7 +299,8 @@
         <div class="col-sm-6">
           <div class="panel panel-default">
             <div class="panel-heading">
-              <h4>Door One - Average People Passed in the last 20 minutes</h4>
+              <h4>Door One - Average People Passed in the last
+                <span class="door-average-minutes"></span> minutes</h4>
             </div>
             <div class="panel-body">
               <div class="center-chart" id="doorOneChart">
@@ -307,7 +312,8 @@
         <div class="col-sm-6">
           <div class="panel panel-default">
             <div class="panel-heading">
-              <h4>Door Two - Average People Passed in the last 20 minutes</h4>
+              <h4>Door Two - Average People Passed in the last
+                <span class="door-average-minutes"></span> minutes</h4>
             </div>
             <div class="panel-body">
               <div class="center-chart" id="doorTwoChart">
