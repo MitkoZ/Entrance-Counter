@@ -8,13 +8,19 @@ The things that you will need are `NodeJs`, `NPM` and some program that you can 
 ### Installing
 To clone the repository open a `git` terminal and write `git clone https://github.com/MitkoZ/Entrance-Counter.git` (HTTPs) or `git clone git@github.com:MitkoZ/Entrance-Counter.git` (SSH).
 
-To start the project open a terminal, go to the project's directory and then run `node index.js`.
+Open a terminal, go to the project's directory and run `npm install`, so that the npm packages declared in the package.json can get downloaded.
+
 Example:
 ```
 cd /d D:\Entrance-Counter 
+npm install
+```
+
+To start the project run `node index.js`.
+```
 node index.js
 ```
-You will get a message in the terminal. ```listening on *:3000```. The project is ready and running. Just open a browser and go to port 3000. 
+You will get a message in the terminal ```listening on *:3000``` (port may vary depending on the config file). The project is ready and running. Just open a browser and go to port 3000. 
 `http://localhost:3000/`
 
 ### Sending data
