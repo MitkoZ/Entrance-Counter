@@ -60,15 +60,17 @@
           drawGaugeChart("usersOnlineChart", chartData);
         });
         socket.on('doorOne', function (doorOneAverage, doorOnePassedThroughToday) {
-          doorOneCachedAverage = doorOneAverage;
+          let doorOneAvgInteger = Math.floor(doorOneAverage);
+          doorOneCachedAverage = doorOneAvgInteger;
           $('#doorOne').html(doorOnePassedThroughToday);
-          let chartData = [["Label", "Value"], ["Door one", doorOneAverage]];
+          let chartData = [["Label", "Value"], ["Door one", doorOneAvgInteger]];
           drawGaugeChart("doorOneChart", chartData);
         });
         socket.on('doorTwo', function (doorTwoAverage, doorTwoPassedThroughToday) {
-          doorTwoCachedAverage = doorTwoAverage;
+          let doorTwoAvgInteger = Math.floor(doorTwoAverage);
+          doorTwoCachedAverage = doorTwoAvgInteger;
           $('#doorTwo').html(doorTwoPassedThroughToday);
-          let chartData = [["Label", "Value"], ["Door two", doorTwoAverage]];
+          let chartData = [["Label", "Value"], ["Door two", doorTwoAvgInteger]];
           drawGaugeChart("doorTwoChart", chartData);
         });
         socket.on("noiseData", function (msg) {
@@ -76,6 +78,10 @@
           let chartData = [["Label", "Value"], ["dB", msg]];
           drawGaugeChart("noiseChart", chartData);
         })
+
+        $.get("/getDoorAverageMinutes")
+          .done((minutes) => $(".door-average-minutes").html(minutes))
+          .fail(() => alert("Couldn't get data from the server"));
       });
     });
 
@@ -299,7 +305,8 @@
         <div class="col-sm-6">
           <div class="panel panel-default">
             <div class="panel-heading">
-              <h4>Door One - Average People Passed in the last 20 minutes</h4>
+              <h4>Door One - Average People Passed in the last
+                <span class="door-average-minutes"></span> minutes</h4>
             </div>
             <div class="panel-body">
               <div class="center-chart" id="doorOneChart">
@@ -311,7 +318,8 @@
         <div class="col-sm-6">
           <div class="panel panel-default">
             <div class="panel-heading">
-              <h4>Door Two - Average People Passed in the last 20 minutes</h4>
+              <h4>Door Two - Average People Passed in the last
+                <span class="door-average-minutes"></span> minutes</h4>
             </div>
             <div class="panel-body">
               <div class="center-chart" id="doorTwoChart">
