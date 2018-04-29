@@ -5,26 +5,26 @@ const io = require('socket.io')(http);
 const bodyParser = require('body-parser');
 const Base64 = require('js-base64').Base64;
 const schedule = require('node-schedule');
+const config = require('./config.js');
 
 app.use(bodyParser.json());
 
 app.use(express.static(__dirname + '/public'));
 
-var currentOnlineUsers = 0;
-const timeToCalculateAverageFor = 20;
+let currentOnlineUsers = 0;
 
-var doorOneCounter = 0;
-var doorOneAverage = 0;
+let doorOneCounter = 0;
+let doorOneAverage = 0;
 
-var doorTwoCounter = 0;
-var doorTwoAverage = 0;
+let doorTwoCounter = 0;
+let doorTwoAverage = 0;
 
-var doorOnePassedThroughToday = 0;
-var doorTwoPassedThroughToday = 0;
+let doorOnePassedThroughToday = 0;
+let doorTwoPassedThroughToday = 0;
 
-var currentNoiseValue = 0;
+let currentNoiseValue = 0;
 
-var airDustinessData = [
+let airDustinessData = [
     //[[{hour}, {minutes}, {seconds}], {particles}] - format
     // mock data
     // [[23, 2, 14], 35],
@@ -50,6 +50,10 @@ app.get('/', function (req, res) {
     res.sendFile(__dirname + '/index.html');
 });
 
+app.get("/getDoorAverageMinutes", (req, res) => {
+    res.status(200).json(config.timeToCalculateAverageFor);
+})
+
 app.get("/getAllDustParticles", function (req, res) {
     res.status(200).json(airDustinessData);
 });
@@ -59,22 +63,22 @@ app.get("/getLatestDustParticles", function (req, res) {
 });
 
 app.post('/submitData', function (req, res) {
-    var requestBody = req.body;
-    var device = requestBody.dev_id;
-    var receivedValue = Number(requestBody.payload_raw);
+    let requestBody = req.body;
+    let sensorId = requestBody.dev_id;
+    let receivedValue = Number(requestBody.payload_raw);
 
-    switch (device) {
-        case "doorOneSensor":
-        case "doorTwoSensor":
+    switch (sensorId) {
+        case config.doorOneSensorId:
+        case config.doorTwoSensorId:
             if (receivedValue < 0) {
                 res.status(400).send("Negative value for count of steps is not allowed");
                 return;
             }
-            incrementAverageDoorSteps(device, receivedValue, timeToCalculateAverageFor);
-            emitAverageDoorSteps(device);
+            incrementAverageDoorSteps(sensorId, receivedValue, config.timeToCalculateAverageFor);
+            emitAverageDoorSteps(sensorId);
             res.end();
             break;
-        case "noiseSensor":
+        case config.noiseSensorId:
             if (receivedValue < 0) {
                 res.status(400).send("Negative values for noise are not allowed");
                 return;
@@ -83,7 +87,7 @@ app.post('/submitData', function (req, res) {
             io.emit("noiseData", currentNoiseValue);
             res.end();
             break;
-        case "airDustinessSensor":
+        case config.airDustinessSensorId:
             if (receivedValue < 0) {
                 res.status(400).send("Negative air dust particles data is not allowed");
                 return;
@@ -93,13 +97,13 @@ app.post('/submitData', function (req, res) {
             var dateNow = new Date();
             var dustParticleAndHour = [[dateNow.getHours(), dateNow.getMinutes(), dateNow.getSeconds()], dustParticle];
             airDustinessData.push(dustParticleAndHour);
-            setTimeout(removeDustData, 43200000, dateNow); // after 12 hours
+            setTimeout(removeDustData, config.removeDustDataAfter, dateNow);
             io.emit("onDustParticlesSensor", dustParticleAndHour);
             io.emit("onLatestDustParticlesDataUpdated", latestAirDustinessParticles);
             res.end();
             break;
         default:
-            throw new Error("Device not handled");
+            throw new Error(`${sensorId} is not handled in the switch`);
 
     }
 });
@@ -119,55 +123,55 @@ io.on('connection', function (socket) {
     });
 });
 
-let resetDoorsPassedThroughCron = schedule.scheduleJob("0 0 * * *", function () {
+let resetDoorsPassedThroughCron = schedule.scheduleJob(config.resetDoorTotalAfter, function () {
     doorOnePassedThroughToday = 0;
     doorTwoPassedThroughToday = 0;
     io.emit("doorOne", doorOneAverage, doorOnePassedThroughToday);
     io.emit("doorTwo", doorTwoAverage, doorTwoPassedThroughToday);
 })
 
-function incrementAverageDoorSteps(door, receivedValue, timeInMinutesToCalculateFor) {
-    switch (door) {
-        case "doorOneSensor":
+function incrementAverageDoorSteps(sensorId, receivedValue, timeInMinutesToCalculateFor) {
+    switch (sensorId) {
+        case config.doorOneSensorId:
             doorOnePassedThroughToday += receivedValue;
             doorOneCounter += receivedValue;
             doorOneAverage = doorOneCounter / timeInMinutesToCalculateFor;
-            setTimeout(decrementAverageDoorSteps, timeInMinutesToCalculateFor * 60 * 1000, door, receivedValue, timeInMinutesToCalculateFor);
+            setTimeout(decrementAverageDoorSteps, timeInMinutesToCalculateFor * 60 * 1000, sensorId, receivedValue, timeInMinutesToCalculateFor);
             break;
-        case "doorTwoSensor":
+        case config.doorTwoSensorId:
             doorTwoPassedThroughToday += receivedValue;
             doorTwoCounter += receivedValue;
             doorTwoAverage = doorTwoCounter / timeInMinutesToCalculateFor;
-            setTimeout(decrementAverageDoorSteps, timeInMinutesToCalculateFor * 60 * 1000, door, receivedValue, timeInMinutesToCalculateFor);
+            setTimeout(decrementAverageDoorSteps, timeInMinutesToCalculateFor * 60 * 1000, sensorId, receivedValue, timeInMinutesToCalculateFor);
             break;
     }
 }
 
-function emitAverageDoorSteps(door) {
-    switch (door) {
-        case "doorOneSensor":
+function emitAverageDoorSteps(sensorId) {
+    switch (sensorId) {
+        case config.doorOneSensorId:
             io.emit("doorOne", doorOneAverage, doorOnePassedThroughToday);
             break;
-        case "doorTwoSensor":
+        case config.doorTwoSensorId:
             io.emit("doorTwo", doorTwoAverage, doorTwoPassedThroughToday);
             break;
     }
 }
 
-function decrementAverageDoorSteps(door, valueToDecrementWith, timeInMinutesToCalculateFor) {
-    switch (door) {
-        case "doorOneSensor":
+function decrementAverageDoorSteps(sensorId, valueToDecrementWith, timeInMinutesToCalculateFor) {
+    switch (sensorId) {
+        case config.doorOneSensorId:
             doorOneCounter -= valueToDecrementWith;
             doorOneAverage = doorOneCounter / timeInMinutesToCalculateFor;
-            emitAverageDoorSteps("doorOneSensor");
+            emitAverageDoorSteps(sensorId);
             break;
-        case "doorTwoSensor":
+        case config.doorTwoSensorId:
             doorTwoCounter -= valueToDecrementWith;
             doorTwoAverage = doorTwoCounter / timeInMinutesToCalculateFor;
-            emitAverageDoorSteps("doorTwoSensor");
+            emitAverageDoorSteps(sensorId);
             break;
         default:
-            throw new Error(`${door} is not handled in the switch`);
+            throw new Error(`${sensorId} is not handled in the switch`);
     }
 };
 
@@ -190,6 +194,6 @@ function changeLatestDustData() {
     }
 }
 
-http.listen(3000, function () {
-    console.log('listening on *:3000');
+http.listen(config.port, function () {
+    console.log(`listening on *:${config.port}`);
 });
