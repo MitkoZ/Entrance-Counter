@@ -51,7 +51,7 @@ app.get('/', function (req, res) {
 });
 
 app.get("/getDoorAverageMinutes", (req, res) => {
-    res.status(200).json(config.timeToCalculateAverageFor);
+    res.status(200).json(config.timeToCalculateAverageForDoors);
 })
 
 app.get("/getAllDustParticles", function (req, res) {
@@ -74,7 +74,7 @@ app.post('/submitData', function (req, res) {
                 res.status(400).send("Negative value for count of steps is not allowed");
                 return;
             }
-            incrementAverageDoorSteps(sensorId, receivedValue, config.timeToCalculateAverageFor);
+            incrementAverageDoorSteps(sensorId, receivedValue, config.timeToCalculateAverageForDoors);
             emitAverageDoorSteps(sensorId);
             res.end();
             break;

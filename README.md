@@ -66,7 +66,7 @@ and for the noise sensor
 ```
 
 ### Configuration
-If you want to configure some of the sensor ids, the time to calculate the average for, the time of removing of each dust particle, the port of the server or the reset time of the door total tabs, that can be done from the `config.js` file. 
+If you want to configure some of the sensor ids, the average people passed per minute for the last XXX minutes from the doors, the time of removing of each dust particle, the port of the server or the reset time of the door total tabs, that can be done from the `config.js` file. 
 
 For example if you want your "doorOneSensor" to be called "blah_blah" just change this line 
 
