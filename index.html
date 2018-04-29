@@ -56,15 +56,17 @@
           drawGaugeChart("usersOnlineChart", chartData);
         });
         socket.on('doorOne', function (doorOneAverage, doorOnePassedThroughToday) {
-          doorOneCachedAverage = doorOneAverage;
+          let doorOneAvgInteger = Math.floor(doorOneAverage);
+          doorOneCachedAverage = doorOneAvgInteger;
           $('#doorOne').html(doorOnePassedThroughToday);
-          let chartData = [["Label", "Value"], ["Door one", doorOneAverage]];
+          let chartData = [["Label", "Value"], ["Door one", doorOneAvgInteger]];
           drawGaugeChart("doorOneChart", chartData);
         });
         socket.on('doorTwo', function (doorTwoAverage, doorTwoPassedThroughToday) {
-          doorTwoCachedAverage = doorTwoAverage;
+          let doorTwoAvgInteger = Math.floor(doorTwoAverage);
+          doorTwoCachedAverage = doorTwoAvgInteger;
           $('#doorTwo').html(doorTwoPassedThroughToday);
-          let chartData = [["Label", "Value"], ["Door two", doorTwoAverage]];
+          let chartData = [["Label", "Value"], ["Door two", doorTwoAvgInteger]];
           drawGaugeChart("doorTwoChart", chartData);
         });
         socket.on("noiseData", function (msg) {
