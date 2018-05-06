@@ -14,11 +14,8 @@
   <style>
     .center-chart {
       width: 50%;
+      height: 30%;
       margin: 0 auto;
-    }
-
-    .icon {
-      width: 100%;
     }
   </style>
   <title>PCVT</title>
@@ -33,6 +30,10 @@
     crossorigin="anonymous"></script>
 
   <script>
+    var value;
+    var min;
+    var max;
+
     var socket = null;
     google.charts.load('current', { 'packages': ['gauge'] });
     let usersOnlineChart = null;
@@ -54,23 +55,25 @@
         doorTwoChart = new google.visualization.Gauge(document.getElementById("doorTwoChart"));
         noiseChart = new google.visualization.Gauge(document.getElementById("noiseChart"));
         socket.on('onlineUserCount', function (msg) {
+
           $('#onlineCounter').html(msg);
           onlineUserCountCachedData = msg;
           let chartData = [["Label", "Value"], ["", msg]];
           drawGaugeChart("usersOnlineChart", chartData);
         });
         socket.on('doorOne', function (doorOneAverage, doorOnePassedThroughToday) {
-          let doorOneAvgInteger = Math.floor(doorOneAverage);
-          doorOneCachedAverage = doorOneAvgInteger;
+          if (doorOneAverage > max) {
+            max = doorOneAverage;
+          }
+          doorOneCachedAverage = doorOneAverage;
           $('#doorOne').html(doorOnePassedThroughToday);
-          let chartData = [["Label", "Value"], ["Door one", doorOneAvgInteger]];
+          let chartData = [["Label", "Value"], ["Door one", doorOneAverage]];
           drawGaugeChart("doorOneChart", chartData);
         });
         socket.on('doorTwo', function (doorTwoAverage, doorTwoPassedThroughToday) {
-          let doorTwoAvgInteger = Math.floor(doorTwoAverage);
-          doorTwoCachedAverage = doorTwoAvgInteger;
+          doorTwoCachedAverage = doorTwoAverage;
           $('#doorTwo').html(doorTwoPassedThroughToday);
-          let chartData = [["Label", "Value"], ["Door two", doorTwoAvgInteger]];
+          let chartData = [["Label", "Value"], ["Door two", doorTwoAverage]];
           drawGaugeChart("doorTwoChart", chartData);
         });
         socket.on("noiseData", function (msg) {
@@ -78,10 +81,6 @@
           let chartData = [["Label", "Value"], ["dB", msg]];
           drawGaugeChart("noiseChart", chartData);
         })
-
-        $.get("/getDoorAverageMinutes")
-          .done((minutes) => $(".door-average-minutes").html(minutes))
-          .fail(() => alert("Couldn't get data from the server"));
       });
     });
 
@@ -92,7 +91,7 @@
         var dustData = new google.visualization.DataTable();
         var options = {
           pointSize: 7,
-          legend: { position: 'none' },
+          legend:{position:'none'},
           animation: {
             startup: true,
             duration: 1000,
@@ -101,7 +100,6 @@
         };
         dustData.addColumn("timeofday", "Hour");
         dustData.addColumn("number", "Dust Particles");
-
         $.get("/getAllDustParticles")
           .fail(() => alert("Could not load data from the server"))
           .always((d) => {
@@ -109,47 +107,50 @@
             airDustinessCachedData = dustData;
             dustChart.draw(dustData, options);
           });
-
         socket.on("onDustParticlesSensor", function (airDustinessAndtimeData) {
           dustData.addRow(airDustinessAndtimeData);
           airDustinessCachedData = dustData;
           dustChart.draw(dustData, options);
         });
-
         socket.on("onDustParticlesDataUpdated", function (airDustinessAndtimeData) {
           dustData.removeRows(0, dustData.getNumberOfRows());
           dustData.addRows(airDustinessAndtimeData);
           airDustinessCachedData = dustData;
           dustChart.draw(dustData, options);
         });
-
-        socket.on("latestDustParticles", function (latestAirDustinessData) {
-          document.getElementById("airDustiness").innerText = latestAirDustinessData;
-        });
-
-        socket.on("onLatestDustParticlesDataUpdated", function (latestDustParticlesDataUpdated) {
-          document.getElementById("airDustiness").innerText = latestDustParticlesDataUpdated;
-        });
-
-        $.get("/getLatestDustParticles")
-          .fail(() => alert("Could not load data from the server"))
-          .always((d) => document.getElementById("airDustiness").innerText = d);
-
-        calculateChartsSize();
       })
     })
 
-    $(window).resize(calculateChartsSize);
+    $(window).resize(function () {
+      let onlineUsersChartData = [["Label", "Value"], ["", onlineUserCountCachedData]];
+      console.log(onlineUsersChartData);
+      let doorOneChartData = [["Label", "Value"], ["Door one", doorOneCachedAverage]];
+      let doorTwoChartData = [["Label", "Value"], ["Door two", doorTwoCachedAverage]];
+      let noiseChartData = [["Label", "Value"], ["dB", noiseCachedData]];
+      drawGaugeChart("usersOnlineChart", onlineUsersChartData);
+      drawGaugeChart("doorOneChart", doorOneChartData);
+      drawGaugeChart("doorTwoChart", doorTwoChartData);
+      drawGaugeChart("noiseChart", noiseChartData);
+      var dustinessChartOptions = {
+        pointSize: 7,
+        animation: {
+          startup: true,
+          duration: 1000,
+          easing: 'in'
+        }
+      };
+      dustChart.draw(airDustinessCachedData, dustinessChartOptions);
+    });
 
     function drawGaugeChart(chartName, chartData) {
-      var value = chartData[1][1];
-      var min = Math.floor(value / 10) * 10;
-      var max = min + 10;
-      var greenFrom = max - 8;
-      var greenTo = max - 4;
-      var yellowFrom = max - 4;
-      var yellowTo = yellowFrom + 2;
-      var redFrom = max - 2;
+       value = chartData[1][1];
+       min = Math.floor(value / 10) * 10;
+       max = min + 100;
+      var greenFrom = max-80;
+      var greenTo = max - 40;
+      var yellowFrom = max - 40;
+      var yellowTo = yellowFrom + 20;
+      var redFrom = max - 20;
       var redTo = max;
       var data = google.visualization.arrayToDataTable(chartData);
       var options = {
@@ -178,31 +179,6 @@
           break;
       }
     }
-
-    function calculateChartsSize() {
-      let onlineUsersChartData = [["Label", "Value"], ["", onlineUserCountCachedData]];
-      let doorOneChartData = [["Label", "Value"], ["Door one", doorOneCachedAverage]];
-      let doorTwoChartData = [["Label", "Value"], ["Door two", doorTwoCachedAverage]];
-      let noiseChartData = [["Label", "Value"], ["dB", noiseCachedData]];
-      let gaugeCharts = $(".center-chart");
-      let gaugeChartsWidth = gaugeCharts.width();
-      let newGaugeChartsHeight = gaugeChartsWidth * 0.879765396;
-      gaugeCharts.height(newGaugeChartsHeight);
-      drawGaugeChart("usersOnlineChart", onlineUsersChartData);
-      drawGaugeChart("doorOneChart", doorOneChartData);
-      drawGaugeChart("doorTwoChart", doorTwoChartData);
-      drawGaugeChart("noiseChart", noiseChartData);
-      var dustinessChartOptions = {
-        pointSize: 7,
-        legend: { position: 'none' },
-        animation: {
-          startup: true,
-          duration: 1000,
-          easing: 'in'
-        }
-      };
-      dustChart.draw(airDustinessCachedData, dustinessChartOptions);
-    }
   </script>
 
 </head>
@@ -228,7 +204,7 @@
             <div class="panel-heading">
               <div class="row">
                 <div class="col-xs-3">
-                  <img src="/icons/users-online.svg" alt="users-online-icon" class="icon">
+                  <i class="fa fa-shopping-cart fa-5x"></i>
                 </div>
                 <div class="col-xs-9 text-right">
                   <div class="huge" id="onlineCounter">0</div>
@@ -245,7 +221,7 @@
             <div class="panel-heading">
               <div class="row">
                 <div class="col-xs-3">
-                  <img src="/icons/door.svg" alt="door-icon" class="icon">
+                  <i class="fa fa-comments fa-5x"></i>
                 </div>
                 <div class="col-xs-9 text-right">
                   <div class="huge" id="doorOne">0</div>
@@ -260,7 +236,7 @@
             <div class="panel-heading">
               <div class="row">
                 <div class="col-xs-3">
-                  <img src="/icons/door.svg" alt="door-icon" class="icon">
+                  <i class="fa fa-tasks fa-5x"></i>
                 </div>
                 <div class="col-xs-9 text-right">
                   <div class="huge" id="doorTwo">0</div>
@@ -275,10 +251,10 @@
             <div class="panel-heading">
               <div class="row">
                 <div class="col-xs-3">
-                    <img src="/icons/duster.svg" alt="duster-icon" class="icon">                 
+                  <i class="fa fa-support fa-5x"></i>
                 </div>
                 <div class="col-xs-9 text-right">
-                  <div class="huge" id="airDustiness">0</div>
+                  <div class="huge">0</div>
                   <div>Air Dustiness</div>
                 </div>
               </div>
@@ -294,7 +270,7 @@
               <h4>Air Dustiness Chart</h4>
             </div>
             <div class="panel-body">
-              <div style="width: 100%" id="dustinessOfTheAirChart">
+              <div style="width: 100%" class="center-chart" id="dustinessOfTheAirChart">
               </div>
             </div>
           </div>
@@ -302,11 +278,10 @@
       </div>
 
       <div class="row">
-        <div class="col-sm-6">
+        <div class="col-sm-5 col-sm-offset-1">
           <div class="panel panel-default">
             <div class="panel-heading">
-              <h4>Door One - Average People Passed in the last
-                <span class="door-average-minutes"></span> minutes</h4>
+              <h4>Door One - Average People Passed in the last 20 minutes</h4>
             </div>
             <div class="panel-body">
               <div class="center-chart" id="doorOneChart">
@@ -315,11 +290,10 @@
           </div>
         </div>
 
-        <div class="col-sm-6">
+        <div class="col-sm-5">
           <div class="panel panel-default">
             <div class="panel-heading">
-              <h4>Door Two - Average People Passed in the last
-                <span class="door-average-minutes"></span> minutes</h4>
+              <h4>Door Two - Average People Passed in the last 20 minutes</h4>
             </div>
             <div class="panel-body">
               <div class="center-chart" id="doorTwoChart">
@@ -329,7 +303,7 @@
         </div>
       </div>
       <div class="row">
-        <div class="col-sm-6">
+        <div class="col-sm-5 col-sm-offset-1">
           <div class="panel panel-default">
             <div class="panel-heading">
               <h4>Users Online</h4>
@@ -341,7 +315,7 @@
           </div>
         </div>
 
-        <div class="col-sm-6">
+        <div class="col-sm-5">
           <div class="panel panel-default">
             <div class="panel-heading">
               <h4>Noise</h4>
