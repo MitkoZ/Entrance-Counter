@@ -45,6 +45,8 @@
     let doorTwoCachedAverage = null;
     let noiseCachedData = null;
     let airDustinessCachedData = null;
+    var min;
+    var max;
 
     google.charts.setOnLoadCallback(function () {
       $(function () {
@@ -61,6 +63,9 @@
         });
         socket.on('doorOne', function (doorOneAverage, doorOnePassedThroughToday) {
           let doorOneAvgInteger = Math.floor(doorOneAverage);
+          if (doorOneAverage > max) {
+            max = doorOneAverage;
+          }
           doorOneCachedAverage = doorOneAvgInteger;
           $('#doorOne').html(doorOnePassedThroughToday);
           let chartData = [["Label", "Value"], ["Door one", doorOneAvgInteger]];
@@ -143,8 +148,8 @@
 
     function drawGaugeChart(chartName, chartData) {
       var value = chartData[1][1];
-      var min = Math.floor(value / 10) * 10;
-      var max = min + 10;
+       min = Math.floor(value / 10) * 10;
+       max = min + 10;
       var greenFrom = max - 8;
       var greenTo = max - 4;
       var yellowFrom = max - 4;
